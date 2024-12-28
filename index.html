@@ -201,10 +201,10 @@
 				pitch = Math.min(pitch + 1, 33);
 				break;
 			case 'ArrowLeft': // Roll left
-				roll = Math.max(roll - 5, MIN_ROLL);
+				roll = Math.max(roll - 1, MIN_ROLL);
 				break;
 			case 'ArrowRight': // Roll right
-				roll = Math.min(roll + 5, MAX_ROLL);
+				roll = Math.min(roll + 1, MAX_ROLL);
 				break;
 		case 'c': // Toggle HUD
  	 	hudVisible = !hudVisible;
