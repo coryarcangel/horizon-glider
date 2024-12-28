@@ -1,199 +1,223 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Horizon Glider ✈️</title>
-  <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
-      background: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-family: Arial, sans-serif;
-    }
-    .hud {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      color: white;
-      background: rgba(255, 255, 255, 0.8);
-      padding: 10px;
-      border-radius: 5px;
-      font-size: 16px;
-    }
-    .directions {
-      position: absolute;
-      bottom: 20px;
-      right: 20px;
-      color: black;
-      background: rgba(255, 255, 255, 0.8);
-      padding: 10px;
-      border-radius: 5px;
-      font-size: 16px;
-    }
-    .screen {
-      width: 100%;
-      height: 100%;
-      position: absolute;
-      background: white;
-    }
-    .black-flash {
-      background: black;
-      animation: flash 1s;
-      position: absolute;
-      width: 100%;
-      height: 100%;
-    }
-    @keyframes flash {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0; }
-    }
-  </style>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Horizon Glider ✈️</title>
+	<style>
+	body, html {
+		margin: 0;
+		padding: 0;
+		width: 100%;
+		height: 100%;
+		background: white;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		font-family: Arial, sans-serif;
+	}
+	.hud {
+		position: absolute;
+		top: 20px;
+		left: 20px;
+		color: black;
+		background: rgba(255, 255, 255, 0.8);
+		padding: 10px;
+		border-radius: 5px;
+		font-size: 16px;
+	}
+	.directions {
+		position: absolute;
+		bottom: 20px;
+		right: 20px;
+		color: black;
+		background: rgba(255, 255, 255, 0.8);
+		padding: 10px;
+		border-radius: 5px;
+		font-size: 16px;
+	}
+	.screen {
+		width: 100%;
+		height: 100%;
+		position: absolute;
+		background: white;
+	}
+	.black-flash {
+		background: black;
+		animation: flash 1s;
+		position: absolute;
+		width: 100%;
+		height: 100%;
+	}
+	@keyframes flash {
+		0%, 100% { opacity: 1; }
+		50% { opacity: 0; }
+	}
+	</style>
 </head>
 <body>
-  <div class="screen"></div>
-  <div class="hud">
-    <p>Throttle: <span id="throttle">50%</span></p>
-    <p>Pitch: <span id="pitch">0°</span></p>
-    <p>Roll: <span id="roll">0°</span></p>
-    <p>Altitude: <span id="altitude">1000</span> ft</p>
-    <p>Speed: <span id="speed">200</span> knots</p>
-  </div>
-  <div class="directions">
-    <p>↑ ↓ Pitch</p>
-    <p>← → Throttle</p>
-    <p>A D Roll</p>
-  </div>
+	<div class="screen"></div>
+	<div class="hud">
+	<p>Throttle: <span id="throttle">50%</span></p>
+	<p>Pitch: <span id="pitch">0°</span></p>
+	<p>Roll: <span id="roll">0°</span></p>
+	<p>Altitude: <span id="altitude">1000</span> ft</p>
+	<p>Speed: <span id="speed">200</span> knots</p>
+	</div>
+	<div class="directions">
+	<p>↑ ↓ Pitch</p>
+	<p>← → Roll</p>
+	<p>A D Throttle</p>
+	</div>
 
-  <script>
-    // Game Variables
-    let throttle = 50; // Percentage (0-100)
-    let pitch = 0; // Degrees (-10 to 10)
-    let roll = 0; // Degrees (-45 to 45)
-    let altitude = 1000; // Feet
-    let speed = 200; // Knots
-    let interval;
+	<script>
+	// Game Variables
+	let throttle = 50; // Percentage (0-100)
+	let pitch = 0; // Degrees (-10 to 10)
+	let roll = 0; // Degrees (-45 to 45)
+	let altitude = 1000; // Feet
+	let speed = 200; // Knots
+	let interval;
+	let hudVisible = false;
 
-    // Unsafe Limits
-    const MIN_ALTITUDE = 0;
-    const MAX_ALTITUDE = 5000;
-    const MIN_SPEED = 50;
-    const MAX_SPEED = 500;
-    const MIN_ROLL = -45; // Roll range
-    const MAX_ROLL = 45;
+	// Unsafe Limits
+	const MIN_ALTITUDE = 0;
+	const MAX_ALTITUDE = 5000;
+	const MIN_SPEED = 50;
+	const MAX_SPEED = 500;
+	const MIN_ROLL = -45; // Roll range
+	const MAX_ROLL = 45;
+	const MIN_PITCH = -33; // Roll range
+	const MAX_PITCH = 33;	
+	
 
-    // Elements
-    const throttleEl = document.getElementById('throttle');
-    const pitchEl = document.getElementById('pitch');
-    const rollEl = document.getElementById('roll');
-    const altitudeEl = document.getElementById('altitude');
-    const speedEl = document.getElementById('speed');
-    const screen = document.querySelector('.screen');
+	// Elements
+	const throttleEl = document.getElementById('throttle');
+	const pitchEl = document.getElementById('pitch');
+	const rollEl = document.getElementById('roll');
+	const altitudeEl = document.getElementById('altitude');
+	const speedEl = document.getElementById('speed');
+	const hudEl = document.querySelector('.hud');
 
-    // Update HUD
-    function updateHUD() {
-      throttleEl.textContent = `${throttle}%`;
-      pitchEl.textContent = `${pitch}°`;
-      rollEl.textContent = `${roll}°`;
-      altitudeEl.textContent = `${altitude}`;
-      speedEl.textContent = `${speed}`;
-    }
+	hudEl.style.display = 'none';
 
-    // Check for Unsafe Conditions
-    function checkSafety() {
-      if (altitude <= MIN_ALTITUDE || altitude >= MAX_ALTITUDE || speed <= MIN_SPEED || speed >= MAX_SPEED) {
-        resetGame();
-      }
-    }
+	// Update HUD
+	function updateHUD() {
+		throttleEl.textContent = `${throttle}%`;
+		pitchEl.textContent = `${pitch}°`;
+		rollEl.textContent = `${roll}°`;
+		altitudeEl.textContent = `${altitude}`;
+		speedEl.textContent = `${speed}`;
+	}
 
-    // Game Reset
-    function resetGame() {
-      clearInterval(interval);
-      const flash = document.createElement('div');
-      flash.className = 'black-flash';
-      document.body.appendChild(flash);
-      setTimeout(() => {
-        document.body.removeChild(flash);
-        throttle = 50;
-        pitch = 0;
-        roll = 0;
-        altitude = 1000;
-        speed = 200;
-        startGame();
-      }, 1000);
-    }
+	// Check for Unsafe Conditions
+	function checkSafety() {
+		if (
+			altitude <= MIN_ALTITUDE 
+			|| altitude >= MAX_ALTITUDE 
+			|| speed <= MIN_SPEED 
+			|| speed >= MAX_SPEED
+			|| roll <= MIN_ROLL 
+			|| roll >= MAX_ROLL
+			|| pitch <= MIN_PITCH 
+			|| pitch >= MAX_PITCH			
+			) 
+			{
+			resetGame();
+		}
+	}
 
-    // Function to apply altitude and speed loss
-    function applyAltitudeAndSpeedLoss() {
-      if (throttle < 25) {
-        // Decrease altitude
-        altitude -= 5; // Lose 5 feet per update
-        if (altitude < MIN_ALTITUDE) {
-          altitude = MIN_ALTITUDE; // Prevent going below ground level
-        }
+	// Game Reset
+	function resetGame() {
+		clearInterval(interval);
+		const flash = document.createElement('div');
+		flash.className = 'black-flash';
+		document.body.appendChild(flash);
+		setTimeout(() => {
+			document.body.removeChild(flash);
+			throttle = 50;
+			pitch = 0;
+			roll = 0;
+			altitude = 1000;
+			speed = 200;
+			startGame();
+		}, 1000);
+	}
 
-        // Decrease speed
-        speed -= 2; // Lose 2 knots per update
-        if (speed < MIN_SPEED) {
-          speed = MIN_SPEED; // Prevent going below minimum speed
-        }
-      }
-    }
+	// Function to apply altitude and speed loss
+	function applyAltitudeAndSpeedLoss() {
+		if (throttle < 25) {
+			// Decrease altitude
+			altitude -= 5; // Lose 5 feet per update
+			if (altitude < MIN_ALTITUDE) {
+				altitude = MIN_ALTITUDE; // Prevent going below ground level
+			}
 
-    // Game Logic
-    function updatePhysics() {
-      // Change altitude based on pitch
-      altitude += pitch * 2;
-      speed = 100 + (throttle * 4);
+			// Decrease speed
+			speed -= 2; // Lose 2 knots per update
+			if (speed < MIN_SPEED) {
+				speed = MIN_SPEED; // Prevent going below minimum speed
+			}
+		}
+	}
 
-      // Apply altitude and speed loss if throttle is too low
-      applyAltitudeAndSpeedLoss();
+	// Game Logic
+	function updatePhysics() {
+		// Apply altitude and speed loss if throttle is too low
+		applyAltitudeAndSpeedLoss();
 
-      // Ensure values are rounded
-      altitude = Math.round(altitude);
-      speed = Math.round(speed);
+		// If throttle is 25 or higher, allow pitch to affect altitude
+		if (throttle >= 25) {
+			altitude += pitch * 2; // Altitude change based on pitch
+		}
 
-      checkSafety();
-      updateHUD();
-    }
+		// Calculate speed
+		speed = 100 + (throttle * 4);
 
-    // Start the Game
-    function startGame() {
-      interval = setInterval(updatePhysics, 100);
-    }
+		// Ensure values are rounded
+		altitude = Math.round(altitude);
+		speed = Math.round(speed);
 
-    // User Controls
-    document.addEventListener('keydown', (e) => {
-      switch (e.key) {
-        case 'ArrowUp': // Increase throttle
-          throttle = Math.min(throttle + 5, 100);
-          break;
-        case 'ArrowDown': // Decrease throttle
-          throttle = Math.max(throttle - 5, 0);
-          break;
-        case 'ArrowLeft': // Pitch down
-          pitch = Math.max(pitch - 1, -10);
-          break;
-        case 'ArrowRight': // Pitch up
-          pitch = Math.min(pitch + 1, 10);
-          break;
-        case 'a': // Roll left
-          roll = Math.max(roll - 5, MIN_ROLL);
-          break;
-        case 'd': // Roll right
-          roll = Math.min(roll + 5, MAX_ROLL);
-          break;
-      }
-      updateHUD();
-    });
+		checkSafety();
+		updateHUD();
+	}
 
-    // Initialize Game
-    startGame();
-  </script>
+	// Start the Game
+	function startGame() {
+		interval = setInterval(updatePhysics, 100);
+	}
+
+	// User Controls
+	document.addEventListener('keydown', (e) => {
+		switch (e.key) {
+			case 'd': // Increase throttle
+				throttle = Math.min(throttle + 5, 100);
+				break;
+			case 'a': // Decrease throttle
+				throttle = Math.max(throttle - 5, 0);
+				break;
+			case 'ArrowDown': // Pitch down
+				pitch = Math.max(pitch - 1, -33);
+				break;
+			case 'ArrowUp': // Pitch up
+				pitch = Math.min(pitch + 1, 33);
+				break;
+			case 'ArrowLeft': // Roll left
+				roll = Math.max(roll - 5, MIN_ROLL);
+				break;
+			case 'ArrowRight': // Roll right
+				roll = Math.min(roll + 5, MAX_ROLL);
+				break;
+		case 'c': // Toggle HUD
+ 	 	hudVisible = !hudVisible;
+			hudEl.style.display = hudVisible ? 'block' : 'none';
+		break;
+		}
+		updateHUD();
+	});
+
+	// Initialize Game
+	startGame();
+	</script>
 </body>
 </html>
